@@ -1,169 +1,162 @@
 # Kojable — Self-Improving Answer Alignment Agent
 
-An agent that measures the evidence behind its own answer, learns from research failures, changes its research strategy, and proves whether the next answer improves.
+Most AI agents search, answer, and stop. Kojable audits its evidence, learns why research was weak, persists a lesson to a real system, retrieves it, changes its research strategy, and measures whether the next answer improves.
 
-## Challenge
+## Live result
 
-Self-Improving and Learning Agents.
-
-## Demo question
+Canonical observed live run supplied by the project owner:
 
 > Which is better for AI agent web search, You.com or Exa?
 
-## Self-improving loop
+| Metric | Run 1 | Run 2 |
+|---|---:|---:|
+| Answer Alignment | 63% | 90% |
+| Evidence weaknesses | 8 | 1 |
+| Material claims | 10 | 10 |
+
+**+27 percentage points — IMPROVED.** Later runs may regress. See [verified result](docs/DEMO_RESULT.md) and [sanitized example](examples/demo_result.json).
+
+## The problem
+
+Fluent answers can rely on weak, stale, or insufficiently verified evidence. Most systems discard what went wrong. Kojable closes that loop.
+
+## The idea
+
+Learn a research method from the highest-priority observed failure. Research the exact same question using the externally retrieved lesson, without predetermining which vendor wins.
+
+## How the agent learns
 
 ```text
-Research
-  ↓
-Audit
-  ↓
-Measure
-  ↓
-Learn
-  ↓
-Persist to GitHub through One
-  ↓
-Read memory
-  ↓
-Retry the same question
-  ↓
-Measure again
+Research → Audit evidence → Measure alignment
+ → Learn from the highest-impact failure
+ → Persist learning to GitHub through One
+ → Read learning back → Retry the exact same question → Measure again
 ```
-
-The auditor uses one additional structured You.com Research call and the same
-finite verdict/failure vocabulary for both runs. The learner deterministically
-selects one reusable research-method rule from the highest-priority observed
-failure. It never learns which vendor to prefer.
-
-## Why GitHub?
-
-The learned rule is persisted to a real external system rather than remaining
-hidden in process memory. The second research run reads the rule back from the
-created GitHub Issue through One before rerunning the exact same question. A
-local `learning.json` is only a trace; it is never the authoritative memory.
 
 ## Architecture
 
-```text
-CrewAI Flow
-     ↓
-You.com Search + Research
-     ↓
-Evidence + provenance
-     ↓
-Clean Data gate
-     ↓
-You.com evidence audit
-     ↓
-Daytona deterministic score (Run 1)
-     ↓
-Learn → One → GitHub Issue
-     ↓
-One → read GitHub Issue
-     ↓
-Run 2 → audit → Daytona → compare
+```mermaid
+flowchart TD
+    Q[Buyer Question] --> C[CrewAI Flow]
+    C --> Y[You.com Search + Research]
+    Y --> E[Evidence + Claim Ledger]
+    E --> A[Evidence Audit]
+    A --> D[Daytona Deterministic Scoring]
+    D --> L[Learn Research Rule]
+    L --> O[One]
+    O --> G[GitHub Issue]
+    G --> O2[Read Memory through One]
+    O2 --> R[Research Same Question Again]
+    R --> A2[Audit Again]
+    A2 --> D2[Same Daytona Scorer]
+    D2 --> X[Compare Alignment]
 ```
 
-CrewAI Flow is the real orchestration layer. Its PR2 stages enforce
-`baseline → audit1 → score1 → learn → persist → retrieve → run2 → audit2 → score2 → compare → save`.
+## Partner stack
 
-## Partner roles
+| Partner | Real role |
+|---|---|
+| You.com | Live search, query-aware evidence, structured research and audit |
+| CrewAI | Orchestrates the complete improvement Flow |
+| Daytona | Executes deterministic scoring in isolated sandboxes |
+| One | Discovers documented GitHub actions, writes learning, and reads it back |
+| Clean Data | Checks provenance and supporting evidence for material claims |
 
-**You.com** — Live web search and grounded, structured research.
+## Clean Data
 
-**CrewAI** — Orchestrates the complete learning loop.
+Evidence retains source URL, publisher/domain, retrieval time, supporting passage, publication/update date where available, and source type. The provenance gate reports valid, incomplete, or invalid. Dates are never fabricated; missing dates remain incomplete. Conflicting evidence is not silently removed. Research targets public product/company evidence and does not collect personal data.
 
-**Daytona** — Runs the same deterministic Answer Alignment evaluator for both
-runs in isolated sandboxes. A live run never silently falls back to local
-scoring.
+## The agent changes a real system
 
-**One** — Discovers current GitHub actions, reads each action's knowledge, and
-persists/retrieves learned behavior without exposing GitHub credentials to the
-application.
+One persists the learned rule to a real GitHub Issue and reads it back. Run 2's research instructions must use the retrieved rule. Local learning traces do not substitute for that round trip.
 
-**Clean Data** — Every evidence record retains the source URL, publisher domain, retrieval time, actual retrieved highlights, any available publication/update date, and source type. The validator reports `valid`, `incomplete`, or `invalid`; it never fabricates a date or drops conflicting public product evidence. Missing publication dates are incomplete rather than invalid. No personal information is collected.
+Live memory: [GitHub Issue #1](https://github.com/piushvaish/you-hackathon/issues/1).
 
-## Windows setup
+Failure → Learning → External state change → Persistent memory → Retrieval → Changed behavior.
 
-From the repository root:
+The issue demonstrates memory, not the authoritative demo score. The reused issue may contain an older baseline. The completed comparison artifact supplies scores.
 
-Use Python 3.11, 3.12, or 3.13 (current CrewAI releases do not support Python 3.14).
+## Demo
+
+Full live loop:
 
 ```powershell
-py -m venv .venv
-.\.venv\Scripts\Activate.ps1
-
-python -m pip install --upgrade pip
-python -m pip install -e ".[dev]"
-
-Copy-Item .env.example .env
+python -m kojable_agent --loop
 ```
 
-Populate the root `.env` manually with `YDC_API_KEY` and `DAYTONA_API_KEY`.
-`ONE_SECRET` is optional when One authentication is already managed by the CLI.
-Never commit `.env`.
+Clean result summary:
 
-Install and authenticate using the current One CLI, then connect GitHub:
+```powershell
+python -m kojable_agent --summary
+```
+
+Summary reads the current comparison and optional audit files offline, without credentials or artifact changes. Missing audit counts show unavailable. It never substitutes the canonical example for current results.
+
+### Video
+
+YouTube demo: [ADD YOUTUBE URL]
+
+See the [90-second script](docs/VIDEO_SCRIPT.md).
+
+## Setup
+
+Use Python 3.11–3.13 (3.12 recommended), Node.js with working npm, and You.com, Daytona, and One accounts. From the repository root:
+
+```powershell
+py -3.12 -m venv .venv
+.\.venv\Scripts\Activate.ps1
+python -m pip install --upgrade pip
+python -m pip install -e ".[dev]"
+```
+
+Copy `.env.example` to `.env` only if it does not already exist. Populate `YDC_API_KEY` and `DAYTONA_API_KEY` manually. `ONE_SECRET` is optional when the CLI manages authentication. Never commit `.env`.
 
 ```powershell
 npm install -g @withone/cli
 one init
 one add github
-one --agent list --search github
+one --agent connection list
 ```
 
-Setup is intentionally manual because `one init` and `one add github` are
-interactive. The application never performs them automatically.
-
-## Preflight
-
-```powershell
-python -m kojable_agent --preflight
-```
-
-Preflight checks Python, `.env`, partner SDKs, One authentication, an active
-GitHub connection, and inferred issue-write access. It is read-only and never
-creates a test issue.
+Complete browser authentication and grant GitHub issue access. Interactive setup is manual. Windows One subprocesses use UTF-8 and the system certificate store.
 
 ## Run
 
 ```powershell
+python -m kojable_agent --preflight
 python -m kojable_agent --baseline
 python -m kojable_agent --loop
+python -m kojable_agent --summary
 ```
 
-With no mode flag, the backwards-compatible PR1 baseline still runs. `--loop`
-runs the complete PR2 workflow. It uses three neutral searches in each run and
-adds at most two verification queries derived from the actual Run 1 failure.
-The canonical buyer question never changes, and neither vendor receives a
-domain boost.
+No flag runs the original baseline. Preflight checks local configuration, SDK availability, One authentication, and inferred GitHub write access; it does not prove every live You.com/Daytona operation will succeed. A live loop intentionally creates and retains a GitHub learning issue. Pending references are reused after retrieval failure. Live calls require credentials and may incur provider costs.
 
-## Output
+## How alignment is measured
 
-```text
-data/run_1.json
-data/audit_1.json
-data/learning.json
-data/run_2.json
-data/audit_2.json
-data/comparison.json
+Answer Alignment is a deterministic evidence-alignment measure for this prototype, not a universal factual-accuracy benchmark.
+
+Each material claim earns:
+
+- +1 when supporting evidence exists;
+- +1 when supporting evidence passes Clean Data provenance;
+- +1 when the auditor verdict is verified.
+
+Both runs use the exact same algorithm in Daytona. You.com supplies audit verdicts; code calculates the score. Weak, conflicted, and unsupported claims do not earn the verification point. Weakness counts count non-verified audited claims. Improved, unchanged, and regressed outcomes are reported honestly.
+
+## Repository structure
+
+- `src/kojable_agent/`: research, audit, learning, Flow, scoring, and summary.
+- `tests/`: offline regression tests.
+- `examples/demo_result.json`: sanitized canonical result.
+- `docs/`: demo result, video script, submission checklist.
+- `SUBMISSION.md`: exact 200-word submission description.
+- `data/`: ignored runtime artifacts: `run_1.json`, `audit_1.json`, `learning.json`, `run_2.json`, `audit_2.json`, and `comparison.json`.
+
+```powershell
+python -m pytest
+python -m compileall src
 ```
 
-Runtime output is ignored by Git. `comparison.json` records both scores, the
-honest delta/status, and the genuine GitHub Issue reference when returned.
+## Hackathon submission
 
-## Answer Alignment
-
-Each material claim earns one point for referencing evidence, one point when at
-least one referenced record passes the Clean Data gate, and one point when the
-auditor verdict is `verified`. Weak, conflicted, and unsupported verdicts do not
-receive the verification point. Failure counts remain visible instead of being
-hidden behind penalties. Run 1 and Run 2 use the identical formula in Daytona.
-
-## Expected external effect
-
-A successful `--loop` run creates one GitHub Issue in
-`piushvaish/you-hackathon` containing the research rule learned from Run 1. The
-issue is intentionally retained as evidence that the agent changed a real
-external system. If creation or read-back fails, Run 2 aborts instead of using a
-local fallback.
+Challenge: Self-Improving and Learning Agents. See [submission copy](SUBMISSION.md) and [checklist](docs/SUBMISSION_CHECKLIST.md). Record a 1–3 minute video, replace both YouTube placeholders, and submit the public repository and video.

@@ -1,0 +1,20 @@
+{
+  "question": "Which is better for AI agent web search, You.com or Exa?",
+  "run_1": {
+    "alignment_score": 63,
+    "weaknesses": 8
+  },
+  "learning": {
+    "trigger": "missing_primary_verification",
+    "rule": "Verify material product-capability claims against the product's current primary documentation before concluding.",
+    "persisted_via": "One",
+    "external_system": "GitHub",
+    "issue_url": "https://github.com/piushvaish/you-hackathon/issues/1"
+  },
+  "run_2": {
+    "alignment_score": 90,
+    "weaknesses": 1
+  },
+  "delta": 27,
+  "status": "improved"
+}

@@ -29,7 +29,13 @@ def main(argv: list[str] | None = None) -> int:
         mode.add_argument("--preflight", action="store_true", help="check setup only")
         mode.add_argument("--baseline", action="store_true", help="run the PR1 baseline")
         mode.add_argument("--loop", action="store_true", help="run the complete PR2 loop")
+        mode.add_argument("--summary", action="store_true", help="show saved results offline")
         args = parser.parse_args(argv)
+        if args.summary:
+            from .config import repository_root
+            from .summary import show_summary
+
+            return show_summary(repository_root() / "data")
         settings = Settings.load(require_credentials=not args.preflight)
         if args.preflight:
             return run_preflight(settings)
