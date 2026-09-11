@@ -1,30 +1,57 @@
 # Kojable — Self-Improving Answer Alignment Agent
 
-Most AI agents search, answer, and stop. Kojable audits its evidence, learns why research was weak, persists a lesson to a real system, retrieves it, changes its research strategy, and measures whether the next answer improves.
+## AI answers are becoming part of the buying journey
 
-## Live result
+Buyers increasingly use generative AI to research vendors, compare products, and shape purchase decisions.
 
-Canonical observed live run supplied by the project owner:
+That creates a new commercial risk: if an AI answer is outdated, weakly evidenced, incomplete, or misleading, a company can lose consideration before a buyer reaches its website or speaks to sales.
 
-> Which is better for AI agent web search, You.com or Exa?
+> **Why this matters:** In Gartner's survey of 645 B2B buyers conducted from August through September 2025, **45% said they used GenAI during a recent purchase, primarily to gather information on vendors and products**. At the same time, **51% said they were more likely to encounter misleading information from GenAI**.
+>
+> — [Gartner, May 20, 2026](https://www.gartner.com/en/newsroom/press-releases/2026-05-20-gartner-survey-finds-sixty-nine-percent-of-b-two-b-buyers-turn-to-sales-reps-to-validate-ai-generated-insights)
 
-| Metric | Run 1 | Run 2 |
+When AI is helping form vendor perceptions, answer quality becomes a commercial issue—not just a model-quality issue.
+
+```text
+Weak AI answer
+      ↓
+Wrong or incomplete vendor perception
+      ↓
+Buyer consideration can change
+      ↓
+Commercial risk
+```
+
+## What Kojable does
+
+**Kojable closes that loop.**
+
+Most AI agents search, generate an answer, and stop. Kojable measures the evidence behind its own answer, identifies where the research is weak, learns a better research rule, persists that learning to a real external system, retrieves it, retries the exact same question, and measures whether the new answer is actually better.
+
+## Verified live result
+
+We tested the loop with one buyer-style comparison:
+
+> **Which is better for AI agent web search, You.com or Exa?**
+
+| | Run 1 | Run 2 |
 |---|---:|---:|
-| Answer Alignment | 63% | 90% |
-| Evidence weaknesses | 8 | 1 |
-| Material claims | 10 | 10 |
+| Answer Alignment | **63%** | **90%** |
+| Evidence weaknesses | **8** | **1** |
 
-**+27 percentage points — IMPROVED.** Later runs may regress. See [verified result](docs/DEMO_RESULT.md) and [sanitized example](examples/demo_result.json).
+**+27 percentage points in Answer Alignment**
 
-## The problem
+The buyer question did not change. The second run changed only after the agent audited Run 1, learned a research rule, persisted that learning externally through One and GitHub, read it back, and applied it to the next research attempt.
 
-Fluent answers can rely on weak, stale, or insufficiently verified evidence. Most systems discard what went wrong. Kojable closes that loop.
+This is an observed result, not a guaranteed outcome. Individual runs can improve, remain unchanged, or regress because live web research is stochastic. See the [verified result](docs/DEMO_RESULT.md) and [sanitized example](examples/demo_result.json).
 
-## The idea
+The goal is not to make You.com win the comparison. The goal is to make the answer better aligned with current evidence.
 
-Learn a research method from the highest-priority observed failure. Research the exact same question using the externally retrieved lesson, without predetermining which vendor wins.
+For a company, the same loop could be applied to questions buyers ask about its product, competitors, capabilities, pricing, risks, or category—identifying where AI representation is weak and testing whether an intervention improves it.
 
 ## How the agent learns
+
+Kojable was built for the **Self-Improving and Learning Agents** hackathon challenge.
 
 ```text
 Research → Audit evidence → Measure alignment
@@ -32,6 +59,8 @@ Research → Audit evidence → Measure alignment
  → Persist learning to GitHub through One
  → Read learning back → Retry the exact same question → Measure again
 ```
+
+The agent learns **how to research better**. It does not learn **which vendor to prefer**. It selects one reusable research method from the highest-impact evidence failure observed in Run 1.
 
 ## Architecture
 
