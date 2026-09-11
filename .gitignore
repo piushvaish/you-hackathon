@@ -1,0 +1,42 @@
+# Secrets
+.env
+.env.*
+!.env.example
+.onerc
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Virtual environments
+.venv/
+venv/
+env/
+.tmp/
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Runtime output
+data/run_*.json
+data/audit_*.json
+data/learning.json
+data/comparison.json
+data/*.tmp
+
+# Logs
+*.log
+
+# Packaging
+*.egg-info/
+build/
+dist/
